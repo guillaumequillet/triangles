@@ -7,17 +7,41 @@ class Point
     end
 
     def draw(color = Gosu::Color::WHITE, size = 1)
-        Gosu::draw_rect(@x, @y, size, size, color)
+        Gosu::draw_rect(@x - size / 2, @y - size / 2, size, size, color)
+    end
+end
+
+class AABB
+    def initialize(origin_point, size)
+        @origin_point, @size = origin_point, size        
+    end
+
+    def includes_point?(point)
+        ((point.x >= @origin_point.x && point.x <= @origin_point.x + @size.x) && (point.y >= @origin_point.y && point.y <= @origin_point.y + @size.y) && (point.z >= @origin_point.z && point.z <= @origin_point.z + @size.z))
+    end
+
+    def draw(color)
+        Gosu::draw_rect(@origin_point.x, @origin_point.y, @size.x, @size.y, color)
     end
 end
 
 class Triangle
     def initialize(point_a = Point.new, point_b = Point.new, point_c = Point.new)
         @point_a, @point_b, @point_c = point_a, point_b, point_c
+
+        min_x = [@point_a.x, @point_b.x, @point_c.x].min
+        min_y = [@point_a.y, @point_b.y, @point_c.y].min
+        min_z = [@point_a.z, @point_b.z, @point_c.z].min
+        max_x = [@point_a.x, @point_b.x, @point_c.x].max
+        max_y = [@point_a.y, @point_b.y, @point_c.y].max
+        max_z = [@point_a.z, @point_b.z, @point_c.z].max
+
+        @aabb = AABB.new(Point.new(min_x, min_y, min_z), Point.new(max_x - min_x, max_y - min_y, max_z - min_z))
         @font = Gosu::Font.new(24)
     end
 
     def draw(color = Gosu::Color::WHITE)
+        @aabb.draw(Gosu::Color.new(128, 255, 0, 255))
         Gosu::draw_line(@point_a.x, @point_a.y, color, @point_b.x, @point_b.y, color)
         Gosu::draw_line(@point_b.x, @point_b.y, color, @point_c.x, @point_c.y, color)
         Gosu::draw_line(@point_c.x, @point_c.y, color, @point_a.x, @point_a.y, color)
@@ -28,12 +52,15 @@ class Triangle
     end
 
     def includes_point?(point)
-        # https://www.youtube.com/watch?v=HYAgJN3x4GA&ab_channel=SebastianLague
-        w1_num = @point_a.x * (@point_c.y - @point_a.y) + (point.y - @point_a.y) * (@point_c.x - @point_a.x) - point.x * (@point_c.y - @point_a.y)
-        w1_den = (@point_b.y - @point_a.y) * (@point_c.x - @point_a.x) - (@point_b.x - @point_a.x) * (@point_c.y - @point_a.y)
-        w1 = w1_num.to_f / w1_den
-        w2 = (point.y - @point_a.y - w1 * (@point_b.y - @point_a.y)).to_f / (@point_c.y - @point_a.y)
-        ((w1 >= 0) && (w2 >= 0) && (w1 + w2 <=1))
+        if @aabb.includes_point?(point)
+            # https://www.youtube.com/watch?v=HYAgJN3x4GA&ab_channel=SebastianLague
+            w1_num = @point_a.x * (@point_c.y - @point_a.y) + (point.y - @point_a.y) * (@point_c.x - @point_a.x) - point.x * (@point_c.y - @point_a.y)
+            w1_den = (@point_b.y - @point_a.y) * (@point_c.x - @point_a.x) - (@point_b.x - @point_a.x) * (@point_c.y - @point_a.y)
+            w1 = w1_num.to_f / w1_den
+            w2 = (point.y - @point_a.y - w1 * (@point_b.y - @point_a.y)).to_f / (@point_c.y - @point_a.y)
+            return ((w1 >= 0) && (w2 >= 0) && (w1 + w2 <=1))
+        end
+        return false
     end
 end
 
