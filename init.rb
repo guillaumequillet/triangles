@@ -38,6 +38,16 @@ class Triangle
 
         @aabb = AABB.new(Point.new(min_x, min_y, min_z), Point.new(max_x - min_x, max_y - min_y, max_z - min_z))
         @font = Gosu::Font.new(24)
+        calculate_plane
+    end
+
+    def calculate_plane
+        # https://keisan.casio.com/exec/system/1223596129
+        @a = (@point_b.y - @point_a.y) * (@point_c.z - @point_a.z) - (@point_c.y - @point_a.y) * (@point_b.z - @point_a.z)
+        @b = (@point_b.z - @point_a.z) * (@point_c.x - @point_a.x) - (@point_c.z - @point_a.z) * (@point_b.x - @point_a.x)
+        @c = (@point_b.x - @point_a.x) * (@point_c.y - @point_a.y) - (@point_c.x - @point_a.x) * (@point_b.y - @point_a.y)
+        @d = -(@a * @point_a.x + @b * @point_a.y + @c * @point_a.z)
+        p [@a, @b, @c, @d]
     end
 
     def draw(color = Gosu::Color::WHITE)
@@ -54,6 +64,8 @@ class Triangle
     def includes_point?(point)
         if @aabb.includes_point?(point)
             # https://www.youtube.com/watch?v=HYAgJN3x4GA&ab_channel=SebastianLague
+            # https://gamedev.stackexchange.com/questions/47601/how-to-get-the-height-at-a-position-in-a-triangle
+            # https://codeplea.com/triangular-interpolation
             w1_num = @point_a.x * (@point_c.y - @point_a.y) + (point.y - @point_a.y) * (@point_c.x - @point_a.x) - point.x * (@point_c.y - @point_a.y)
             w1_den = (@point_b.y - @point_a.y) * (@point_c.x - @point_a.x) - (@point_b.x - @point_a.x) * (@point_c.y - @point_a.y)
             w1 = w1_num.to_f / w1_den
@@ -62,11 +74,22 @@ class Triangle
         end
         return false
     end
+
+    def point_height(point)
+        # ax + by + cz + d = 0
+        (-@a * point.x - @c * point.z - @d) / @b
+    end
 end
 
 class Window < Gosu::Window
     def initialize
         super(640, 480, false)
+        temp = Triangle.new(
+            Point.new(-1.04815, 1.40384, 0.13339),
+            Point.new(0.30614, -1, -1),
+            Point.new(0.96254, 1, -1)
+        )
+        p temp.point_height(Point.new(-0.14821, 0, -0.47791))
     end
 
     def button_down(id)
