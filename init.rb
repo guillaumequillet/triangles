@@ -76,8 +76,12 @@ class Triangle
     end
 
     def point_height(point)
-        # ax + by + cz + d = 0
-        (-@a * point.x - @c * point.z - @d) / @b
+        if includes_point?(point)
+            # ax + by + cz + d = 0
+            (-@a * point.x - @c * point.z - @d) / @b
+        else
+            return nil
+        end
     end
 end
 
